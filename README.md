@@ -4,7 +4,7 @@ A conference call implementation using WebRTC, Socket.io and Node.js. This demo 
 
 # Getting Started
 - Run `npm ci`
-- npm run devStart
+- `npm run devStart`
 
 
 # Features
