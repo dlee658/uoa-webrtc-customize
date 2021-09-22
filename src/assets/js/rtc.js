@@ -1,6 +1,4 @@
 /**
- * @author Amir Sanni <amirsanni@gmail.com>
- * @date 6th January, 2020
  */
 import h from './helpers.js';
 
@@ -282,6 +280,10 @@ window.addEventListener( 'load', () => {
             return new Promise( ( res, rej ) => {
                 screen.getTracks().length ? screen.getTracks().forEach( track => track.stop() ) : '';
 
+                screen.getTracks().length ? 
+                console.log(screen.getTracks()) :
+                console.log('s');
+
                 res();
             } ).then( () => {
                 h.toggleShareIcons( false );
@@ -290,7 +292,6 @@ window.addEventListener( 'load', () => {
                 console.error( e );
             } );
         }
-
 
 
         function broadcastNewTracks( stream, type, mirrorMode = true ) {
@@ -307,6 +308,23 @@ window.addEventListener( 'load', () => {
             }
         }
 
+        function broadcastSelectiveNewTracks( stream, selectedUser ) {
+            let track = stream.getVideoTracks()[0];
+            for ( let p in pc ) {
+                let pName = pc[p];
+
+                // console.log('pName is', pName, ' selected user is', selectedUser);
+                // console.log('pc[pName] is',pc[pName]);
+
+                if ( typeof pc[pName] == 'object' ) {
+                    // if (pName === selectedUser){
+                        if (pName === pName){             
+                        console.log('p\<><><>');                    
+                        h.replaceTrack( track, pc[pName] );
+                    }
+                }
+            }
+        }
 
         function toggleRecordingIcons( isRecording ) {
             let e = document.getElementById( 'record' );
@@ -367,9 +385,27 @@ window.addEventListener( 'load', () => {
         } );
 
 
+        //When the selective video icon is clicked
+        document.getElementById( 'selective-video' ).addEventListener( 'click', ( e ) => {  
+            e.preventDefault();
+            console.log('broadcastSelectiveNewTracks');
+            if ( myStream.getVideoTracks()[0].enabled ) {
+                console.log('set mystream1');
+                // myStream.getVideoTracks()[0].enabled = false;
+                myStream.getVideoTracks()[0].enabled = false;
+                broadcastSelectiveNewTracks( myStream, 'GftZFyPrUtVB_OvvAAAJ' );
+            } else {
+                console.log('could not set my stream 1!');
+                myStream.getVideoTracks()[0].enabled = true;
+                h.setLocalStream( myStream, true );
+            }
+        } );
+
         //When the video icon is clicked
         document.getElementById( 'toggle-video' ).addEventListener( 'click', ( e ) => {
             e.preventDefault();
+
+            console.log('video not share');
 
             let elem = document.getElementById( 'toggle-video' );
 
@@ -396,7 +432,7 @@ window.addEventListener( 'load', () => {
         //When the mute icon is clicked
         document.getElementById( 'toggle-mute' ).addEventListener( 'click', ( e ) => {
             e.preventDefault();
-
+            
             let elem = document.getElementById( 'toggle-mute' );
 
             if ( myStream.getAudioTracks()[0].enabled ) {
