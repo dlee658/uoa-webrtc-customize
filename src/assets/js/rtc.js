@@ -309,22 +309,16 @@ window.addEventListener("load", () => {
       }
     }
 
-    function broadcastSelectiveNewTracks(stream, type, mirrorMode = true) {
+    function broadcastSelectiveNewTracks(stream, selectedUser, type, mirrorMode = true) {
       h.setLocalStream(stream, mirrorMode);
 
-    //   let track =
-    //     type == "audio"
-    //       ? stream.getAudioTracks()[0]
-    //       : stream.getVideoTracks()[0];
-
-    //       console.log(pc);
-
-    //   for (let p in pc) {
-    //     let pName = pc[p];
-    //     if (typeof pc[pName] == "object") {
-    //       h.replaceTrack(track, pc[pName]);
-    //     }
-    //   }
+      let track =
+        type == "audio"
+          ? stream.getAudioTracks()[0]
+          : stream.getVideoTracks()[0];
+          console.log(pc);
+          console.log(pc[selectedUser]);
+          pc[selectedUser] && h.replaceTrack(track, pc[selectedUser]);
     }
 
     function toggleRecordingIcons(isRecording) {
@@ -396,7 +390,7 @@ window.addEventListener("load", () => {
         } else {
           console.log("could not set my stream 1!");
           myStream.getVideoTracks()[0].enabled = true;
-          broadcastSelectiveNewTracks(myStream, "video");
+          broadcastSelectiveNewTracks(myStream, 'selectedUser',  "video");
         }
       });
 
