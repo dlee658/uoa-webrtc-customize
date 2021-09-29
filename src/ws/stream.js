@@ -6,13 +6,13 @@ const stream = ( socket ) => {
 
         //Inform other members in the room of new user's arrival
         if ( socket.adapter.rooms[data.room].length > 1 ) {
-            socket.to( data.room ).emit( 'new user', { socketId: data.socketId } );
+            socket.to( data.room ).emit( 'new user', { socketId: data.socketId } );  //socketId = New user's socketId
         }
     } );
 
 
     socket.on( 'newUserStart', ( data ) => {
-        socket.to( data.to ).emit( 'newUserStart', { sender: data.sender } );
+        socket.to( data.to ).emit( 'newUserStart', { sender: data.sender } );  //data.to = new user's socketId,  sender = existent user
     } );
 
 

@@ -51,14 +51,14 @@ window.addEventListener( 'load', () => {
 
 
             socket.on( 'new user', ( data ) => {
-                socket.emit( 'newUserStart', { to: data.socketId, sender: socketId } );
-                pc.push( data.socketId );
-                init( true, data.socketId );
+                socket.emit( 'newUserStart', { to: data.socketId, sender: socketId } ); //data.socketId = new user's socketId , sender = existent user's socketId
+                pc.push( data.socketId ); //add new user's socketId
+                init( true, data.socketId ); //add stream tracks to each peer connection  //existent user init
             } );
 
 
-            socket.on( 'newUserStart', ( data ) => {
-                pc.push( data.sender );
+            socket.on( 'newUserStart', ( data ) => { //new User gets a response
+                pc.push( data.sender ); //data.sender = existent user
                 init( false, data.sender );
             } );
 
@@ -86,7 +86,7 @@ window.addEventListener( 'load', () => {
 
                         let answer = await pc[data.sender].createAnswer();
 
-                        await pc[data.sender].setLocalDescription( answer );
+                        await pc[data.sender].setLocalDescription( answer ); //automatically generate ice candidates
 
                         socket.emit( 'sdp', { description: pc[data.sender].localDescription, to: data.sender, sender: socketId } );
                     } ).catch( ( e ) => {
@@ -134,9 +134,31 @@ window.addEventListener( 'load', () => {
 
 
 
-        function init( createOffer, partnerName ) {
+        function init( createOffer, partnerName ) { //when new user joined, createOffer = true, partner = new user socketId
             pc[partnerName] = new RTCPeerConnection( h.getIceServer() );
+            let userList = document.getElementById('user-list').querySelector('ul'); 
+            let userLi = document.createElement('li');
 
+            userLi.innerHTML=`<input type="checkbox"  checked/> ${partnerName}`
+            let userCheckbox = userLi.querySelector('input');
+            userCheckbox.value= partnerName;
+
+            userList.appendChild(userLi);
+            userCheckbox.addEventListener('change',function(e){
+                //find video senders to control the track
+                const videoSender= pc[e.target.value].getSenders().find(sender=>sender.track.kind === 'video');
+                
+                if(e.target.checked){ //it was unchecked
+                    videoSender.replaceTrack(pc[e.target.value])
+                }else{ //it was checked
+                    videoSender.replaceTrack(null);
+                }
+                console.log(pc[e.target.value].getSenders())
+            })
+
+            
+            //{'<new user socketId>': peer connection}
+            //but still pc is an array as ['<new user socketId>']
             if ( screen && screen.getTracks().length ) {
                 screen.getTracks().forEach( ( track ) => {
                     pc[partnerName].addTrack( track, screen );//should trigger negotiationneeded event
@@ -235,6 +257,10 @@ window.addEventListener( 'load', () => {
                         break;
                 }
             };
+
+            console.log(pc[partnerName].getSenders() +" is senders");
+            let videoSender =pc[partnerName].getSenders().find((sender)=>sender.track.kind ==="video");
+            
 
 
 
