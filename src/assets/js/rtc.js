@@ -1,22 +1,18 @@
-/**
- * @author Amir Sanni <amirsanni@gmail.com>
- * @date 6th January, 2020
- */
 import h from './helpers.js';
 
 window.addEventListener( 'load', () => {
     const room = h.getQString( location.href, 'room' );
     const username = sessionStorage.getItem( 'username' );
 
-    if ( !room ) {
+    if ( !room ) { //If user is not in the room yet
         document.querySelector( '#room-create' ).attributes.removeNamedItem( 'hidden' );
     }
 
-    else if ( !username ) {
+    else if ( !username ) { //If user is not in the room yet
         document.querySelector( '#username-set' ).attributes.removeNamedItem( 'hidden' );
     }
 
-    else {
+    else {  //If user joined the room
         let commElem = document.getElementsByClassName( 'room-comm' );
 
         for ( let i = 0; i < commElem.length; i++ ) {
@@ -33,33 +29,39 @@ window.addEventListener( 'load', () => {
         var screen = '';
         var recordedStream = [];
         var mediaRecorder = '';
+        let pcUsernames = [];
 
         //Get user video by default
         getAndSetUserStream();
 
 
+        //signaling process
         socket.on( 'connect', () => {
             //set socketId
             socketId = socket.io.engine.id;
             document.getElementById('randomNumber').innerText = randomNumber;
 
-
-            socket.emit( 'subscribe', {
+//-----------------------------------------------------------------------------------
+            socket.emit( 'subscribe', { //new joined user inform other users
                 room: room,
-                socketId: socketId
+                socketId: socketId,
+                newUsername : username
             } );
 
 
+            //existing users get informed about the new user
             socket.on( 'new user', ( data ) => {
-                socket.emit( 'newUserStart', { to: data.socketId, sender: socketId } );
-                pc.push( data.socketId );
-                init( true, data.socketId );
+                socket.emit( 'newUserStart', { to: data.socketId, sender: socketId, oldUsername:username } ); //data.socketId = new user's socketId , sender = existent user's socketId
+                pc.push( data.socketId ); //add new user's socketId
+                pcUsernames[data.socketId] = data.newUsername; //setting new user's name
+                init( true, data.socketId ); //add stream tracks to each peer connection  //existent user init
             } );
 
-
-            socket.on( 'newUserStart', ( data ) => {
-                pc.push( data.sender );
-                init( false, data.sender );
+            //response from existing users
+            socket.on( 'newUserStart', ( data ) => { //new User gets a response from existing users with their socketId
+                pc.push( data.sender ); //data.sender = existent user
+                pcUsernames[data.sender] = data.oldUsername; //setting old user's name
+                init( false, data.sender ); //new user initialize with existent user's socketId
             } );
 
 
@@ -68,8 +70,12 @@ window.addEventListener( 'load', () => {
             } );
 
 
+
+            //set local description / remote descriptions
             socket.on( 'sdp', async ( data ) => {
+
                 if ( data.description.type === 'offer' ) {
+                    console.log('sdp offer')
                     data.description ? await pc[data.sender].setRemoteDescription( new RTCSessionDescription( data.description ) ) : '';
 
                     h.getUserFullMedia().then( async ( stream ) => {
@@ -86,7 +92,7 @@ window.addEventListener( 'load', () => {
 
                         let answer = await pc[data.sender].createAnswer();
 
-                        await pc[data.sender].setLocalDescription( answer );
+                        await pc[data.sender].setLocalDescription( answer ); //automatically generate ice candidates
 
                         socket.emit( 'sdp', { description: pc[data.sender].localDescription, to: data.sender, sender: socketId } );
                     } ).catch( ( e ) => {
@@ -95,6 +101,7 @@ window.addEventListener( 'load', () => {
                 }
 
                 else if ( data.description.type === 'answer' ) {
+                    console.log('sdp answer')
                     await pc[data.sender].setRemoteDescription( new RTCSessionDescription( data.description ) );
                 }
             } );
@@ -132,10 +139,19 @@ window.addEventListener( 'load', () => {
             h.addChat( data, 'local' );
         }
 
+        //init function gets called twice
+        //when existing user call it, createOffer = true, partner = new user
+        //when new user call it, createOffer = false, partner =  existing user
 
-
+        // when new user init, offer = false, partner = existing user's socketId
         function init( createOffer, partnerName ) {
-            pc[partnerName] = new RTCPeerConnection( h.getIceServer() );
+            pc[partnerName] = new RTCPeerConnection( h.getIceServer() ); //making peer connection
+
+
+            pc[partnerName].onremoveTrack = ({track})=>{
+                console.log("detect@@@@@@@@@@@@@@@@@@@@")
+            }
+
 
             if ( screen && screen.getTracks().length ) {
                 screen.getTracks().forEach( ( track ) => {
@@ -164,11 +180,10 @@ window.addEventListener( 'load', () => {
                 } );
             }
 
-
-
             //create offer
             if ( createOffer ) {
                 pc[partnerName].onnegotiationneeded = async () => {
+                    console.log('nego starts')
                     let offer = await pc[partnerName].createOffer();
 
                     await pc[partnerName].setLocalDescription( offer );
@@ -177,14 +192,46 @@ window.addEventListener( 'load', () => {
                 };
             }
 
-
-
             //send ice candidate to partnerNames
             pc[partnerName].onicecandidate = ( { candidate } ) => {
                 socket.emit( 'ice candidates', { candidate: candidate, to: partnerName, sender: socketId } );
             };
 
+            // Audio check
+            const handleCheckAudio = (e) => {
+                e.preventDefault();
+                const isChecked = e.target.checked;
+                let shareOptionLabel = e.target.nextSibling;
+                const selectedPeerConn = pc[e.target.value];
+                let audioSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='audio')
+                if(isChecked){ //Turning on the audio share
+                    shareOptionLabel.innerText = "Audio Sharing is ON"
+                    audioSender.replaceTrack(myStream.getAudioTracks()[0]);
+                }else{ //Turning off the audio share
+                    shareOptionLabel.innerText = "Audio Sharing is OFF"
+                    audioSender.replaceTrack(null);
 
+                }
+
+            }
+
+            const shareOptionLabelOnHTML ="Video Sharing is <span style='color:green'>ON<span>"
+            const shareOptionLabelOffHTML = "Video Sharing is <span style='color:red'>OFF<span>"
+            //this function handles peer connection stream when user click video sharing option
+            const handleCheck = (e)=>{
+                e.preventDefault();
+                let isChecked = e.target.checked;
+                let shareOptionLabel = e.target.nextSibling;
+                const selectedPeerConn = pc[e.target.value];
+                let videoSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='video') // if there is no track or track is video, assume this track as video sender;
+                if(isChecked){ //Turning on the video share
+                    shareOptionLabel.innerHTML = shareOptionLabelOnHTML
+                    videoSender.replaceTrack(myStream.getVideoTracks()[0]);
+                }else{ //Turning off the video share
+                    shareOptionLabel.innerHTML = shareOptionLabelOffHTML
+                    videoSender.replaceTrack(null);
+                }
+            }
 
             //add
             pc[partnerName].ontrack = ( e ) => {
@@ -201,18 +248,70 @@ window.addEventListener( 'load', () => {
                     newVid.autoplay = true;
                     newVid.className = 'remote-video';
 
+                    let newVidDiv = document.createElement('div');
+
+                    newVidDiv.classList.add('vid-div'); //vid-div contains video and control panel
+
                     //video controls elements
                     let controlDiv = document.createElement( 'div' );
                     controlDiv.className = 'remote-video-controls';
                     controlDiv.innerHTML = `<i class="fa fa-microphone text-white pr-3 mute-remote-mic" title="Mute"></i>
                         <i class="fa fa-expand text-white expand-remote-video" title="Expand"></i>`;
 
+
+                    //==========================================================================================================
+                    //Share Options
+                    //==========================================================================================================
+
+
+
+                    let peerNameLabel = document.createElement('label');
+                    peerNameLabel.innerHTML = `<h1>${pcUsernames[partnerName]}<h1/>`;
+                    let shareOptionControl = document.createElement('div');
+                    let shareOptionControlAudio = document.createElement('div');
+
+                    shareOptionControl.classList.add('share-option-control');
+                    shareOptionControlAudio.classList.add('share-option-control-audio');
+
+                    let videoShareOption = document.createElement('input');
+                    videoShareOption.type="checkbox";
+                    videoShareOption.checked= true;
+                    videoShareOption.value = partnerName;
+                    videoShareOption.addEventListener('change',handleCheck);
+
+                    let audioShareOption = document.createElement('input');
+                    audioShareOption.type="checkbox";
+                    audioShareOption.checked= true;
+                    audioShareOption.value = partnerName;
+                    audioShareOption.addEventListener('change',handleCheckAudio);
+
+                    let shareOptionLabel = document.createElement('label');
+                    shareOptionLabel.innerHTML = videoShareOption.checked? shareOptionLabelOnHTML : shareOptionLabelOffHTML
+
+                    let shareOptionLabelAudio = document.createElement('label');
+                    shareOptionLabelAudio.innerText = videoShareOption.checked ? " Audio Sharing is ON" : " Audio Sharing is OFF"
+
+                    shareOptionControl.appendChild(peerNameLabel);
+                    shareOptionControl.appendChild(videoShareOption);
+                    shareOptionControl.appendChild(shareOptionLabel)
+
+                    shareOptionControlAudio.appendChild(audioShareOption);
+                    shareOptionControlAudio.appendChild(shareOptionLabelAudio)
+
                     //create a new div for card
                     let cardDiv = document.createElement( 'div' );
                     cardDiv.className = 'card card-sm';
                     cardDiv.id = partnerName;
-                    cardDiv.appendChild( newVid );
-                    cardDiv.appendChild( controlDiv );
+
+                    newVidDiv.appendChild(newVid);
+                    newVidDiv.appendChild(controlDiv);
+                    cardDiv.appendChild(newVidDiv)
+                    cardDiv.appendChild(shareOptionControl);
+                    cardDiv.appendChild(shareOptionControlAudio);
+
+
+                    //==========================================================================================================
+
 
                     //put div in main-section elem
                     document.getElementById( 'videos' ).appendChild( cardDiv );
@@ -238,6 +337,7 @@ window.addEventListener( 'load', () => {
 
 
 
+
             pc[partnerName].onsignalingstatechange = ( d ) => {
                 switch ( pc[partnerName].signalingState ) {
                     case 'closed':
@@ -249,9 +349,9 @@ window.addEventListener( 'load', () => {
         }
 
 
-
+        //init current user's stream and set it to screen variable
         function shareScreen() {
-            h.shareScreen().then( ( stream ) => {
+            h.shareScreen().then( ( stream ) => {  //shareScreen returns stream current user's stream object
                 h.toggleShareIcons( true );
 
                 //disable the video toggle btns while sharing screen. This is to ensure clicking on the btn does not interfere with the screen sharing
