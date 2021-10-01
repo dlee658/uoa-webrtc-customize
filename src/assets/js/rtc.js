@@ -180,8 +180,6 @@ window.addEventListener( 'load', () => {
                 } );
             }
 
-
-
             //create offer
             if ( createOffer ) {
                 pc[partnerName].onnegotiationneeded = async () => {
@@ -194,40 +192,44 @@ window.addEventListener( 'load', () => {
                 };
             }
 
-
-
             //send ice candidate to partnerNames
             pc[partnerName].onicecandidate = ( { candidate } ) => {
                 socket.emit( 'ice candidates', { candidate: candidate, to: partnerName, sender: socketId } );
             };
 
+            // Audio check
+            const handleCheckAudio = (e) => {
+                e.preventDefault();
+                const isChecked = e.target.checked;
+                let shareOptionLabel = e.target.nextSibling;
+                const selectedPeerConn = pc[e.target.value];
+                let audioSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='audio')
+                if(isChecked){ //Turning on the audio share
+                    shareOptionLabel.innerText = "Audio Sharing is ON"
+                    audioSender.replaceTrack(myStream.getAudioTracks()[0]);
+                }else{ //Turning off the audio share
+                    shareOptionLabel.innerText = "Audio Sharing is OFF"
+                    audioSender.replaceTrack(null);
+                    
+                }
 
+            }
 
             //this function handles peer connection stream when user click video sharing option
             const handleCheck = (e)=>{
                 e.preventDefault();
-                
                 let isChecked = e.target.checked;
                 let shareOptionLabel = e.target.nextSibling;
                 const selectedPeerConn = pc[e.target.value];
                 let videoSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='video') // if there is no track or track is video, assume this track as video sender;
-                
-                
-               
-
-
                 if(isChecked){ //Turning on the video share
                     shareOptionLabel.innerText = "Video Sharing is ON"
                     videoSender.replaceTrack(myStream.getVideoTracks()[0]);
                 }else{ //Turning off the video share
                     shareOptionLabel.innerText = "Video Sharing is OFF"
                     videoSender.replaceTrack(null);
-                    
                 }
-
-                
             }
-
 
             //add
             pc[partnerName].ontrack = ( e ) => {
@@ -263,20 +265,37 @@ window.addEventListener( 'load', () => {
 
                     let peerNameLabel = document.createElement('label');
                     peerNameLabel.innerText = pcUsernames[partnerName];
+
                     let shareOptionControl = document.createElement('div');
+                    let shareOptionControlAudio = document.createElement('div');
+
                     shareOptionControl.classList.add('share-option-control');
+                    shareOptionControlAudio.classList.add('share-option-control-audio');
+
                     let videoShareOption = document.createElement('input');
                     videoShareOption.type="checkbox";
                     videoShareOption.checked= true;
                     videoShareOption.value = partnerName;
-                    videoShareOption.addEventListener('change',handleCheck)
-                    let shareOptionLabel = document.createElement('label');
-                    shareOptionLabel.innerText = videoShareOption.checked? "Video Sharing is ON" : "Video Sharing is OFF"
+                    videoShareOption.addEventListener('change',handleCheck);
 
+                    let audioShareOption = document.createElement('input');
+                    audioShareOption.type="checkbox";
+                    audioShareOption.checked= true;
+                    audioShareOption.value = partnerName;
+                    audioShareOption.addEventListener('change',handleCheckAudio);
+
+                    let shareOptionLabel = document.createElement('label');
+                    shareOptionLabel.innerText = videoShareOption.checked ? " Video Sharing is ON" : " Video Sharing is OFF"
+
+                    let shareOptionLabelAudio = document.createElement('label');
+                    shareOptionLabelAudio.innerText = videoShareOption.checked ? " Audio Sharing is ON" : " Audio Sharing is OFF"                    
                     
                     shareOptionControl.appendChild(peerNameLabel);
                     shareOptionControl.appendChild(videoShareOption);
                     shareOptionControl.appendChild(shareOptionLabel)
+
+                    shareOptionControlAudio.appendChild(audioShareOption);
+                    shareOptionControlAudio.appendChild(shareOptionLabelAudio)
 
                     //create a new div for card
                     let cardDiv = document.createElement( 'div' );
@@ -287,6 +306,7 @@ window.addEventListener( 'load', () => {
                     newVidDiv.appendChild(controlDiv);                    
                     cardDiv.appendChild(newVidDiv)
                     cardDiv.appendChild(shareOptionControl);
+                    cardDiv.appendChild(shareOptionControlAudio);
 
 
                     //==========================================================================================================
