@@ -50,7 +50,7 @@ window.addEventListener( 'load', () => {
 
 
             //existing users get informed about the new user
-            socket.on( 'new user', ( data ) => {  
+            socket.on( 'new user', ( data ) => {
                 socket.emit( 'newUserStart', { to: data.socketId, sender: socketId, oldUsername:username } ); //data.socketId = new user's socketId , sender = existent user's socketId
                 pc.push( data.socketId ); //add new user's socketId
                 pcUsernames[data.socketId] = data.newUsername; //setting new user's name
@@ -73,7 +73,7 @@ window.addEventListener( 'load', () => {
 
             //set local description / remote descriptions
             socket.on( 'sdp', async ( data ) => {
-                
+
                 if ( data.description.type === 'offer' ) {
                     console.log('sdp offer')
                     data.description ? await pc[data.sender].setRemoteDescription( new RTCSessionDescription( data.description ) ) : '';
@@ -144,7 +144,7 @@ window.addEventListener( 'load', () => {
         //when new user call it, createOffer = false, partner =  existing user
 
         // when new user init, offer = false, partner = existing user's socketId
-        function init( createOffer, partnerName ) { 
+        function init( createOffer, partnerName ) {
             pc[partnerName] = new RTCPeerConnection( h.getIceServer() ); //making peer connection
 
 
@@ -152,7 +152,7 @@ window.addEventListener( 'load', () => {
                 console.log("detect@@@@@@@@@@@@@@@@@@@@")
             }
 
-            
+
             if ( screen && screen.getTracks().length ) {
                 screen.getTracks().forEach( ( track ) => {
                     pc[partnerName].addTrack( track, screen );//should trigger negotiationneeded event
@@ -180,8 +180,6 @@ window.addEventListener( 'load', () => {
                 } );
             }
 
-
-
             //create offer
             if ( createOffer ) {
                 pc[partnerName].onnegotiationneeded = async () => {
@@ -194,42 +192,46 @@ window.addEventListener( 'load', () => {
                 };
             }
 
-
-
             //send ice candidate to partnerNames
             pc[partnerName].onicecandidate = ( { candidate } ) => {
                 socket.emit( 'ice candidates', { candidate: candidate, to: partnerName, sender: socketId } );
             };
 
+            // Audio check
+            const handleCheckAudio = (e) => {
+                e.preventDefault();
+                const isChecked = e.target.checked;
+                let shareOptionLabel = e.target.nextSibling;
+                const selectedPeerConn = pc[e.target.value];
+                let audioSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='audio')
+                if(isChecked){ //Turning on the audio share
+                    shareOptionLabel.innerText = "Audio Sharing is ON"
+                    audioSender.replaceTrack(myStream.getAudioTracks()[0]);
+                }else{ //Turning off the audio share
+                    shareOptionLabel.innerText = "Audio Sharing is OFF"
+                    audioSender.replaceTrack(null);
 
+                }
+
+            }
 
             const shareOptionLabelOnHTML ="Video Sharing is <span style='color:green'>ON<span>"
             const shareOptionLabelOffHTML = "Video Sharing is <span style='color:red'>OFF<span>"
             //this function handles peer connection stream when user click video sharing option
             const handleCheck = (e)=>{
                 e.preventDefault();
-                
                 let isChecked = e.target.checked;
                 let shareOptionLabel = e.target.nextSibling;
                 const selectedPeerConn = pc[e.target.value];
                 let videoSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='video') // if there is no track or track is video, assume this track as video sender;
-                
-                
-               
-
-
                 if(isChecked){ //Turning on the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOnHTML
                     videoSender.replaceTrack(myStream.getVideoTracks()[0]);
                 }else{ //Turning off the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOffHTML
                     videoSender.replaceTrack(null);
-                    
                 }
-
-                
             }
-
 
             //add
             pc[partnerName].ontrack = ( e ) => {
@@ -261,24 +263,40 @@ window.addEventListener( 'load', () => {
                     //Share Options
                     //==========================================================================================================
 
-                    
+
 
                     let peerNameLabel = document.createElement('label');
                     peerNameLabel.innerHTML = `<h1>${pcUsernames[partnerName]}<h1/>`;
                     let shareOptionControl = document.createElement('div');
+                    let shareOptionControlAudio = document.createElement('div');
+
                     shareOptionControl.classList.add('share-option-control');
+                    shareOptionControlAudio.classList.add('share-option-control-audio');
+
                     let videoShareOption = document.createElement('input');
                     videoShareOption.type="checkbox";
                     videoShareOption.checked= true;
                     videoShareOption.value = partnerName;
-                    videoShareOption.addEventListener('change',handleCheck)
+                    videoShareOption.addEventListener('change',handleCheck);
+
+                    let audioShareOption = document.createElement('input');
+                    audioShareOption.type="checkbox";
+                    audioShareOption.checked= true;
+                    audioShareOption.value = partnerName;
+                    audioShareOption.addEventListener('change',handleCheckAudio);
+
                     let shareOptionLabel = document.createElement('label');
                     shareOptionLabel.innerHTML = videoShareOption.checked? shareOptionLabelOnHTML : shareOptionLabelOffHTML
 
-                    
+                    let shareOptionLabelAudio = document.createElement('label');
+                    shareOptionLabelAudio.innerText = videoShareOption.checked ? " Audio Sharing is ON" : " Audio Sharing is OFF"
+
                     shareOptionControl.appendChild(peerNameLabel);
                     shareOptionControl.appendChild(videoShareOption);
                     shareOptionControl.appendChild(shareOptionLabel)
+
+                    shareOptionControlAudio.appendChild(audioShareOption);
+                    shareOptionControlAudio.appendChild(shareOptionLabelAudio)
 
                     //create a new div for card
                     let cardDiv = document.createElement( 'div' );
@@ -286,13 +304,14 @@ window.addEventListener( 'load', () => {
                     cardDiv.id = partnerName;
 
                     newVidDiv.appendChild(newVid);
-                    newVidDiv.appendChild(controlDiv);                    
+                    newVidDiv.appendChild(controlDiv);
                     cardDiv.appendChild(newVidDiv)
                     cardDiv.appendChild(shareOptionControl);
+                    cardDiv.appendChild(shareOptionControlAudio);
 
 
                     //==========================================================================================================
-                    
+
 
                     //put div in main-section elem
                     document.getElementById( 'videos' ).appendChild( cardDiv );
