@@ -45,22 +45,22 @@ window.addEventListener( 'load', () => {
             socket.emit( 'subscribe', { //new joined user inform other users
                 room: room,
                 socketId: socketId,
-                username
+                newUsername : username
             } );
 
 
             //existing users get informed about the new user
             socket.on( 'new user', ( data ) => {  
-                socket.emit( 'newUserStart', { to: data.socketId, sender: socketId, username } ); //data.socketId = new user's socketId , sender = existent user's socketId
+                socket.emit( 'newUserStart', { to: data.socketId, sender: socketId, oldUsername:username } ); //data.socketId = new user's socketId , sender = existent user's socketId
                 pc.push( data.socketId ); //add new user's socketId
-                pcUsernames[data.socketId] = username; //setting new user's name
+                pcUsernames[data.socketId] = data.newUsername; //setting new user's name
                 init( true, data.socketId ); //add stream tracks to each peer connection  //existent user init
             } );
 
             //response from existing users
             socket.on( 'newUserStart', ( data ) => { //new User gets a response from existing users with their socketId
                 pc.push( data.sender ); //data.sender = existent user
-                pcUsernames[data.sender] = username; //setting new user's name
+                pcUsernames[data.sender] = data.oldUsername; //setting old user's name
                 init( false, data.sender ); //new user initialize with existent user's socketId
             } );
 
@@ -203,6 +203,8 @@ window.addEventListener( 'load', () => {
 
 
 
+            const shareOptionLabelOnHTML ="Video Sharing is <span style='color:green'>ON<span>"
+            const shareOptionLabelOffHTML = "Video Sharing is <span style='color:red'>OFF<span>"
             //this function handles peer connection stream when user click video sharing option
             const handleCheck = (e)=>{
                 e.preventDefault();
@@ -217,10 +219,10 @@ window.addEventListener( 'load', () => {
 
 
                 if(isChecked){ //Turning on the video share
-                    shareOptionLabel.innerText = "Video Sharing is ON"
+                    shareOptionLabel.innerHTML = shareOptionLabelOnHTML
                     videoSender.replaceTrack(myStream.getVideoTracks()[0]);
                 }else{ //Turning off the video share
-                    shareOptionLabel.innerText = "Video Sharing is OFF"
+                    shareOptionLabel.innerHTML = shareOptionLabelOffHTML
                     videoSender.replaceTrack(null);
                     
                 }
@@ -262,7 +264,7 @@ window.addEventListener( 'load', () => {
                     
 
                     let peerNameLabel = document.createElement('label');
-                    peerNameLabel.innerText = pcUsernames[partnerName];
+                    peerNameLabel.innerHTML = `<h1>${pcUsernames[partnerName]}<h1/>`;
                     let shareOptionControl = document.createElement('div');
                     shareOptionControl.classList.add('share-option-control');
                     let videoShareOption = document.createElement('input');
@@ -271,7 +273,7 @@ window.addEventListener( 'load', () => {
                     videoShareOption.value = partnerName;
                     videoShareOption.addEventListener('change',handleCheck)
                     let shareOptionLabel = document.createElement('label');
-                    shareOptionLabel.innerText = videoShareOption.checked? "Video Sharing is ON" : "Video Sharing is OFF"
+                    shareOptionLabel.innerHTML = videoShareOption.checked? shareOptionLabelOnHTML : shareOptionLabelOffHTML
 
                     
                     shareOptionControl.appendChild(peerNameLabel);
