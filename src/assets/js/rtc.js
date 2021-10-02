@@ -197,6 +197,8 @@ window.addEventListener( 'load', () => {
                 socket.emit( 'ice candidates', { candidate: candidate, to: partnerName, sender: socketId } );
             };
 
+            const shareOptionLabelOnHTMLAudio ="Audio Sharing is ON"
+            const shareOptionLabelOffHTMLAudio = "Audio Sharing is OFF"
             // Audio check
             const handleCheckAudio = (e) => {
                 e.preventDefault();
@@ -205,10 +207,10 @@ window.addEventListener( 'load', () => {
                 const selectedPeerConn = pc[e.target.value];
                 let audioSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='audio')
                 if(isChecked){ //Turning on the audio share
-                    shareOptionLabel.innerText = "Audio Sharing is <span style='color:green'>ON<span>"
+                    shareOptionLabel.innerText = shareOptionLabelOnHTMLAudio;
                     audioSender.replaceTrack(myStream.getAudioTracks()[0]);
                 }else{ //Turning off the audio share
-                    shareOptionLabel.innerText = "Audio Sharing is <span style='color:red'>OFF<span>"
+                    shareOptionLabel.innerText = shareOptionLabelOffHTMLAudio;
                     audioSender.replaceTrack(null);
 
                 }
@@ -225,10 +227,10 @@ window.addEventListener( 'load', () => {
                 const selectedPeerConn = pc[e.target.value];
                 let videoSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='video') // if there is no track or track is video, assume this track as video sender;
                 if(isChecked){ //Turning on the video share
-                    shareOptionLabel.innerHTML = shareOptionLabelOnHTML
+                    shareOptionLabel.innerHTML = shareOptionLabelOnHTML;
                     videoSender.replaceTrack(myStream.getVideoTracks()[0]);
                 }else{ //Turning off the video share
-                    shareOptionLabel.innerHTML = shareOptionLabelOffHTML
+                    shareOptionLabel.innerHTML = shareOptionLabelOffHTML;
                     videoSender.replaceTrack(null);
                 }
             }
@@ -289,7 +291,7 @@ window.addEventListener( 'load', () => {
                     shareOptionLabel.innerHTML = videoShareOption.checked? shareOptionLabelOnHTML : shareOptionLabelOffHTML
 
                     let shareOptionLabelAudio = document.createElement('label');
-                    shareOptionLabelAudio.innerText = videoShareOption.checked ? " Audio Sharing is ON" : " Audio Sharing is OFF"
+                    shareOptionLabelAudio.innerText = videoShareOption.checked ? shareOptionLabelOnHTMLAudio : shareOptionLabelOffHTMLAudio
 
                     shareOptionControl.appendChild(peerNameLabel);
                     shareOptionControl.appendChild(videoShareOption);
