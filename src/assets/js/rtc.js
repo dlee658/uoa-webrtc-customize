@@ -205,10 +205,10 @@ window.addEventListener( 'load', () => {
                 const selectedPeerConn = pc[e.target.value];
                 let audioSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='audio')
                 if(isChecked){ //Turning on the audio share
-                    shareOptionLabel.innerText = "Audio Sharing is ON"
+                    shareOptionLabel.innerText = "Audio Sharing is <span style='color:green'>ON<span>"
                     audioSender.replaceTrack(myStream.getAudioTracks()[0]);
                 }else{ //Turning off the audio share
-                    shareOptionLabel.innerText = "Audio Sharing is OFF"
+                    shareOptionLabel.innerText = "Audio Sharing is <span style='color:red'>OFF<span>"
                     audioSender.replaceTrack(null);
 
                 }
