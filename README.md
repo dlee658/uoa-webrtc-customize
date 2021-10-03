@@ -9,8 +9,9 @@ A conference call implementation using WebRTC, Socket.io and Node.js. This demo 
 
 # Features
 - Multi-participants
-- Toggling of video stream
-- Toggling of audio stream (mute & unmute)
+- Toggling of video stream to everyone in the room
+- Toggling of audio stream (mute & unmute) to everyone in the room
+- Toggling of video stream and audio stream to a specific user
 - Screen sharing
 - Text chat
 - Mute individual participant
