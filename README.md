@@ -6,12 +6,12 @@ This demo is ideal for no more than 5 devices.
 
 
 # Technology Stack
-The project was implemented using WebRTC, Socket.io and Node.js. 
+The project was implemented using WebRTC, Socket.io, Node.js and Bootstrap. 
 
 
 # Features
-- Selective video sharing between multi-participants
-- Selective audio stream between multi-participants
+- Selective video sharing between multi-participants (user can select who to share their video feed)
+- Selective audio stream between multi-participants (user can select who to share their audio feed)
 - Multi-participants
 - Toggling of video stream
 - Toggling of audio stream (mute & un-mute)
@@ -36,5 +36,4 @@ The project was implemented using WebRTC, Socket.io and Node.js.
 
 
 # Demo
-Please request for a new demo if the link expires.
-
+Please request the link for the demo at jjou009@aucklanduni.ac.nz
