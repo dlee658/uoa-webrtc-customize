@@ -15,7 +15,6 @@ const stream = ( socket ) => {
         socket.to( data.to ).emit( 'newUserStart', { sender: data.sender,oldUsername:data.oldUsername } );  //data.to = new user's socketId,  sender = existent user
     } );
 
-
     socket.on( 'sdp', ( data ) => {
         socket.to( data.to ).emit( 'sdp', { description: data.description, sender: data.sender } );
     } );
@@ -24,6 +23,10 @@ const stream = ( socket ) => {
     socket.on( 'ice candidates', ( data ) => {
         socket.to( data.to ).emit( 'ice candidates', { candidate: data.candidate, sender: data.sender } );
     } );
+
+    socket.on('videoSharing', ({status,sender,to})=>{
+        socket.to(to).emit('videoSharing',{status,sender});
+    })
 
 
     socket.on( 'chat', ( data ) => {
