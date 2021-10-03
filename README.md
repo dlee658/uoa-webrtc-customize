@@ -1,6 +1,7 @@
 # Conference Call
 A conference call implementation using WebRTC, Socket.io and Node.js. This demo is ideal for not more than 4 devices.
 
+Make sure that you have installed nodejs
 
 # Getting Started
 - Run `npm ci`
