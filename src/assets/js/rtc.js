@@ -30,6 +30,7 @@ window.addEventListener( 'load', () => {
         var recordedStream = [];
         var mediaRecorder = '';
         let pcUsernames = [];
+        let pcMediaStreams = [];
 
         //Get user video by default
         getAndSetUserStream();
@@ -105,7 +106,21 @@ window.addEventListener( 'load', () => {
                     await pc[data.sender].setRemoteDescription( new RTCSessionDescription( data.description ) );
                 }
             } );
-
+            
+            //Informed by other user that he has turned on/off the video sharing
+            socket.on('videoSharing',({status,sender})=>{
+                if(status==='off'){ //user turned off video sharing
+                    if ( document.getElementById( `${ sender }-video` ) ) {
+                        pcMediaStreams[sender] = document.getElementById( `${ sender }-video` ).srcObject;
+                        document.getElementById( `${ sender }-video` ).srcObject = null;
+                        document.getElementById( `${ sender }-video` ).poster='image/videoImage.png';
+                    }
+                }else{ //user turned on video sharing
+                    if ( document.getElementById( `${ sender }-video` ) ) {
+                        document.getElementById( `${ sender }-video` ).srcObject =pcMediaStreams[sender];
+                    }
+                }
+            })
 
             socket.on( 'chat', ( data ) => {
                 h.addChat( data, 'remote' );
@@ -147,12 +162,6 @@ window.addEventListener( 'load', () => {
         function init( createOffer, partnerName ) {
             pc[partnerName] = new RTCPeerConnection( h.getIceServer() ); //making peer connection
 
-
-            pc[partnerName].onremoveTrack = ({track})=>{
-                console.log("detect@@@@@@@@@@@@@@@@@@@@")
-            }
-
-
             if ( screen && screen.getTracks().length ) {
                 screen.getTracks().forEach( ( track ) => {
                     pc[partnerName].addTrack( track, screen );//should trigger negotiationneeded event
@@ -182,8 +191,10 @@ window.addEventListener( 'load', () => {
 
             //create offer
             if ( createOffer ) {
-                pc[partnerName].onnegotiationneeded = async () => {
+                pc[partnerName].onnegotiationneeded = async (e) => {
                     console.log('nego starts')
+                    
+
                     let offer = await pc[partnerName].createOffer();
 
                     await pc[partnerName].setLocalDescription( offer );
@@ -220,23 +231,28 @@ window.addEventListener( 'load', () => {
             const shareOptionLabelOnHTML ="Video Sharing is <span style='color:green'>ON<span>"
             const shareOptionLabelOffHTML = "Video Sharing is <span style='color:red'>OFF<span>"
             //this function handles peer connection stream when user click video sharing option
-            const handleCheck = (e)=>{
+            const handleCheckVideo = (e)=>{
                 e.preventDefault();
                 let isChecked = e.target.checked;
                 let shareOptionLabel = e.target.nextSibling;
                 const selectedPeerConn = pc[e.target.value];
                 let videoSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='video') // if there is no track or track is video, assume this track as video sender;
+                
                 if(isChecked){ //Turning on the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOnHTML;
                     videoSender.replaceTrack(myStream.getVideoTracks()[0]);
+                    socket.emit('videoSharing',{status:'on',to:e.target.value,sender:socketId,test:myStream.getVideoTracks()[0]});
                 }else{ //Turning off the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOffHTML;
                     videoSender.replaceTrack(null);
+                    socket.emit('videoSharing',{status:'off',to:e.target.value,sender:socketId});
                 }
             }
 
             //add
             pc[partnerName].ontrack = ( e ) => {
+
+                console.log('on track')
                 let str = e.streams[0];
                 if ( document.getElementById( `${ partnerName }-video` ) ) {
                     document.getElementById( `${ partnerName }-video` ).srcObject = str;
@@ -279,7 +295,7 @@ window.addEventListener( 'load', () => {
                     videoShareOption.type="checkbox";
                     videoShareOption.checked= true;
                     videoShareOption.value = partnerName;
-                    videoShareOption.addEventListener('change',handleCheck);
+                    videoShareOption.addEventListener('change',handleCheckVideo);
 
                     let audioShareOption = document.createElement('input');
                     audioShareOption.type="checkbox";
