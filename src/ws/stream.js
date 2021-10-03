@@ -1,5 +1,14 @@
+let hostId = null;
+
 const stream = ( socket ) => {
     socket.on( 'subscribe', ( data ) => {
+        console.log('host id = '+hostId)
+        if(!hostId){ //The first user's socket id is stored as the first host socket id
+            hostId = data.socketId; 
+            socket.emit('set host',{hostId:data.socketId})
+        }else{
+            socket.emit('set host',{hostId});
+        }
         //subscribe/join a room
         socket.join( data.room );
         socket.join( data.socketId );
@@ -8,7 +17,27 @@ const stream = ( socket ) => {
         if ( socket.adapter.rooms[data.room].length > 1 ) {
             socket.to( data.room ).emit( 'new user', { socketId: data.socketId, newUsername:data.newUsername } );  //socketId = New user's socketId
         }
+
     } );
+
+    socket.on('disconneting' , ()=>{
+        hostId = null;
+        if(socket.id === hostId){
+            socket.rooms.foreach(room=>{
+                socket.to(room).emit('host out');
+            })
+        }
+    })
+
+    socket.on('disconnect',()=>{
+        hostId = null;
+        if(socket.id === hostId){
+            socket.rooms.foreach(room=>{
+                socket.to(room).emit('host out');
+            })
+        }
+    })
+
 
 
     socket.on( 'newUserStart', ( data ) => {

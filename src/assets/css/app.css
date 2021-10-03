@@ -4,56 +4,60 @@ body {
 }
 
 .navbar {
-  background-color: #BB86FC !important;
-  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  background-color: #bb86fc !important;
+  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px,
+    rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
 }
 
-.bg-info{
+.bg-info {
   background-color: #292929 !important;
-  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px,
+    rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
 }
-.text-center{
+.text-center {
   padding-top: 20px;
 }
-.btn-info{
-  border-color: #BB86FC;
+.btn-info {
+  border-color: #bb86fc;
   background-color: transparent;
   margin-top: 20px;
 }
-.btn-info:hover{
-  background-color: #BB86FC;
-  border-color: #BB86FC;
-  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+.btn-info:hover {
+  background-color: #bb86fc;
+  border-color: #bb86fc;
+  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px,
+    rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
 }
 
-a{
-  color: #BB86FC;
+a {
+  color: #bb86fc;
 }
 
-h1{
+h1 {
   font-size: 1.5rem;
   padding: 10px;
 }
 
-.form-control{
+.form-control {
   background-color: #333333;
-  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px,
+    rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
   border: none;
   color: white;
 }
-.form-control:focus{
+.form-control:focus {
   background-color: #333333;
   color: white;
   border: none;
 }
 
-.form-control::placeholder{
-color: #BB86FC;
+.form-control::placeholder {
+  color: #bb86fc;
 }
 
-.card{
-  background-color: transparent;
-
+.card {
+  background-color: darkslategrey;
+  margin-bottom: 10%;
 }
 
 .chat-col {
@@ -151,6 +155,9 @@ color: #BB86FC;
   visibility: visible;
 }
 
+#local-container {
+  margin-bottom: 20%;
+}
 .local-video {
   width: 100%;
   border: 2px solid blue;
@@ -186,8 +193,9 @@ color: #BB86FC;
 .chat-card {
   border-radius: 6px;
   background-color: #333333;
-  color:white;
-  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  color: white;
+  box-shadow: rgba(2, 2, 31, 0.25) 0px 6px 12px -2px,
+    rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
 }
 
 .btn-no-effect:focus {

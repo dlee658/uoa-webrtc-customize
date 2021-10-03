@@ -23,6 +23,7 @@ window.addEventListener( 'load', () => {
 
         let socket = io( '/stream' );
 
+        let hostId = '';
         var socketId = '';
         var randomNumber = `__${h.generateRandomString()}__${h.generateRandomString()}__`;
         var myStream = '';
@@ -31,6 +32,8 @@ window.addEventListener( 'load', () => {
         var mediaRecorder = '';
         let pcUsernames = [];
         let pcMediaStreams = [];
+        let mainUserEle = '' //the hidden input in the main stream to store main user id
+        
 
         //Get user video by default
         getAndSetUserStream();
@@ -43,18 +46,73 @@ window.addEventListener( 'load', () => {
             document.getElementById('randomNumber').innerText = randomNumber;
 
 //-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
             socket.emit( 'subscribe', { //new joined user inform other users
                 room: room,
                 socketId: socketId,
                 newUsername : username
             } );
+            
 
+
+            //setting host socket id
+            socket.on('set host',(data)=>{
+                hostId = data.hostId;
+                console.log('setting host '+ data.hostId)
+
+                mainUserEle = document.getElementById('main-user-id');
+
+                const mainVideo = document.getElementById('host').querySelector('video');
+                const myPinBtn = document.getElementById('local-container').querySelector('button');
+                myPinBtn.addEventListener('click',()=>{
+                    h.getUserFullMedia().then( async ( stream ) => {
+                        if ( mainVideo) {
+                            h.setMainStream( stream ); //setMainStream function takes a media stream as a param and set it to the main video
+                        }
+                    } ).catch( ( e ) => {
+                        console.error( e );
+                    } );
+                })
+
+                if(data.hostId === socketId){ //if I am the host show my screen
+
+                    mainUserEle.value = socketId
+                    h.getUserFullMedia().then( async ( stream ) => {
+                        if ( mainVideo) {
+                            h.setMainStream( stream ); //setMainStream function takes a media stream as a param and set it to the main video
+                        }
+                    } ).catch( ( e ) => {
+                        console.error( e );
+                    } );
+
+                }else{ 
+                    console.log(pcMediaStreams[hostId])
+                }
+
+                 
+
+            })
+
+            socket.on('host out',()=>{
+                console.log('host out');
+                const mainVideo = document.getElementById('host').querySelector('video');
+
+                h.getUserFullMedia().then( async ( stream ) => {
+                    if ( mainVideo) {
+                        h.setMainStream( stream ); //setMainStream function takes a media stream as a param and set it to the main video
+                    }
+                } ).catch( ( e ) => {
+                    console.error( e );
+                } );
+            })
 
             //existing users get informed about the new user
             socket.on( 'new user', ( data ) => {
                 socket.emit( 'newUserStart', { to: data.socketId, sender: socketId, oldUsername:username } ); //data.socketId = new user's socketId , sender = existent user's socketId
                 pc.push( data.socketId ); //add new user's socketId
                 pcUsernames[data.socketId] = data.newUsername; //setting new user's name
+                                
                 init( true, data.socketId ); //add stream tracks to each peer connection  //existent user init
             } );
 
@@ -113,12 +171,27 @@ window.addEventListener( 'load', () => {
                     if ( document.getElementById( `${ sender }-video` ) ) {
                         document.getElementById( `${ sender }-video` ).srcObject =pcMediaStreams[sender];
                     }
+
+                    //If turned on user was on the main video turn it on on the main as well
+                    if(mainUserEle.value === sender){
+                        document.getElementById('host').querySelector('video').srcObject = pcMediaStreams[document.getElementById('main-user-id').value];
+                    }
+
+
                 }else if(status==='off'){ //user turned off video sharing
                     if ( document.getElementById( `${ sender }-video` ) ) {
                         pcMediaStreams[sender] = document.getElementById( `${ sender }-video` ).srcObject;
                         document.getElementById( `${ sender }-video` ).srcObject = new MediaStream(document.getElementById( `${ sender }-video` ).srcObject.getAudioTracks()); // retrieve audio tracks from the original media stream, make a new media stream and set it to the HTMLMediaElement.srcObject 
                         document.getElementById( `${ sender }-video` ).poster='image/videoImage.png';
                     }
+
+                    //If turned off user was on the main video turn it off on the main as well
+                    if(mainUserEle.value === sender){
+                        document.getElementById('host').querySelector('video').srcObject = null;
+                        document.getElementById('host' ).poster='image/videoImage.png'
+                    }
+
+                    
                 }
             })
 
@@ -255,8 +328,6 @@ window.addEventListener( 'load', () => {
 
                 }
 
-                console.log(selectedPeerConn.getSenders());
-                console.log(videoSender);
             }
 
             //add
@@ -265,8 +336,13 @@ window.addEventListener( 'load', () => {
                 console.log('on track')
                 let str = e.streams[0];
                 
+
+                //setting the main video
                 if ( document.getElementById( `host` ) ) {
-                    document.getElementById( `host` ).querySelector('video').srcObject = str;
+                    if(partnerName === hostId){ //if connected pc is the host show it on the main video
+                        document.getElementById( `host` ).querySelector('video').srcObject = e.streams[0];
+                        mainUserEle.value = partnerName;
+                    }
                 }
 
                 if ( document.getElementById( `${ partnerName }-video` ) ) {
@@ -324,9 +400,17 @@ window.addEventListener( 'load', () => {
                     let shareOptionLabelAudio = document.createElement('label');
                     shareOptionLabelAudio.innerText = videoShareOption.checked ? shareOptionLabelOnHTMLAudio : shareOptionLabelOffHTMLAudio
 
+
+                    let setMainBtn = document.createElement('button');
+                    setMainBtn.innerHTML = 'pin to main';
+                    setMainBtn.addEventListener('click',(btnEvent)=>{
+                        h.setMainStream(e.streams[0]);
+                    })
+
                     shareOptionControl.appendChild(peerNameLabel);
                     shareOptionControl.appendChild(videoShareOption);
                     shareOptionControl.appendChild(shareOptionLabel)
+                    
 
                     shareOptionControlAudio.appendChild(audioShareOption);
                     shareOptionControlAudio.appendChild(shareOptionLabelAudio)
@@ -341,6 +425,7 @@ window.addEventListener( 'load', () => {
                     cardDiv.appendChild(newVidDiv)
                     cardDiv.appendChild(shareOptionControl);
                     cardDiv.appendChild(shareOptionControlAudio);
+                    cardDiv.appendChild(setMainBtn);
 
 
                     //==========================================================================================================

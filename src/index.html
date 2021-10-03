@@ -136,12 +136,16 @@
                         
                     <div class="col col-md-9" id="host">
                         <video autoplay playsinline/>
+                        <input hidden id="main-user-id"/>
                     </div>
                     
                     
                     
                     <div class="col col-md-3" id='videos' autoplay playsinline>
-                        <video class="local-video mirror-mode" id='local' volume='0' autoplay muted></video>
+                        <div id="local-container">
+                            <video class="local-video mirror-mode" id='local' volume='0' autoplay muted></video>
+                            <button id="my-pin-btn">Pin my video to main</button>
+                        </div>
                     </div>
                 </div>
 

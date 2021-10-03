@@ -264,6 +264,11 @@ export default {
         mirrorMode ? localVidElem.classList.add( 'mirror-mode' ) : localVidElem.classList.remove( 'mirror-mode' );
     },
 
+    setMainStream(stream){
+        const mainVideo = document.getElementById('host').querySelector('video');
+        mainVideo.srcObject= stream;
+    },
+
 
     adjustVideoElemSize() {
         let elem = document.getElementsByClassName( 'card' );
