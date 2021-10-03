@@ -93,10 +93,8 @@
 }
 
 .local-video {
-  bottom: 0;
-  left: 0;
-  position: fixed;
-  width: 15vw;
+  width: 100%;
+  border: 2px solid blue;
 }
 
 .user-list {
@@ -180,6 +178,27 @@
   width: 80%;
 }
 
+/* =====================================video layouts ====================================== */
+#host-image {
+  width: 100%;
+}
+
+#host {
+  float: left;
+}
+#host video {
+  width: 100%;
+}
+#videos {
+  float: right;
+  overflow-y: scroll;
+  max-height: 80vh;
+  border: 3px solid black;
+}
+#videos div {
+  width: 100% !important;
+}
+
 @keyframes animatetop {
   from {
     top: -300px;
@@ -219,17 +238,12 @@
   }
 
   .local-video {
-    width: 40vw;
-  }
-
-  .user-list {
-    width: 40vw;
   }
 }
 
 @media (min-width: 768px) {
   .card {
-    width: 50%;
+    width: 100%;
     z-index: 1000;
   }
 }
