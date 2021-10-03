@@ -299,7 +299,8 @@ window.addEventListener( 'load', () => {
 
 
                     let peerNameLabel = document.createElement('label');
-                    peerNameLabel.innerHTML = `<h1>${pcUsernames[partnerName]}<h1/>`;
+                    peerNameLabel.className = "user-name";
+                    peerNameLabel.innerText = `${pcUsernames[partnerName]}`;
                     let shareOptionControl = document.createElement('div');
                     let shareOptionControlAudio = document.createElement('div');
 
