@@ -109,15 +109,15 @@ window.addEventListener( 'load', () => {
             
             //Informed by other user that he has turned on/off the video sharing
             socket.on('videoSharing',({status,sender})=>{
-                if(status==='off'){ //user turned off video sharing
-                    if ( document.getElementById( `${ sender }-video` ) ) {
-                        pcMediaStreams[sender] = document.getElementById( `${ sender }-video` ).srcObject;
-                        document.getElementById( `${ sender }-video` ).srcObject = null;
-                        document.getElementById( `${ sender }-video` ).poster='image/videoImage.png';
-                    }
-                }else{ //user turned on video sharing
+                if(status==='on'){ //user turned on video sharing
                     if ( document.getElementById( `${ sender }-video` ) ) {
                         document.getElementById( `${ sender }-video` ).srcObject =pcMediaStreams[sender];
+                    }
+                }else if(status==='off'){ //user turned off video sharing
+                    if ( document.getElementById( `${ sender }-video` ) ) {
+                        pcMediaStreams[sender] = document.getElementById( `${ sender }-video` ).srcObject;
+                        document.getElementById( `${ sender }-video` ).srcObject = new MediaStream(document.getElementById( `${ sender }-video` ).srcObject.getAudioTracks()); // retrieve audio tracks from the original media stream, make a new media stream and set it to the HTMLMediaElement.srcObject 
+                        document.getElementById( `${ sender }-video` ).poster='image/videoImage.png';
                     }
                 }
             })
@@ -214,7 +214,7 @@ window.addEventListener( 'load', () => {
                 const isChecked = e.target.checked;
                 let shareOptionLabel = e.target.nextSibling;
                 const selectedPeerConn = pc[e.target.value];
-                let audioSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='audio')
+                let audioSender = selectedPeerConn.getSenders().find(sender => sender.track?.kind==='audio' || sender.dtmf !== null) // I assume audio senders have dtmf property
                 if(isChecked){ //Turning on the audio share
                     shareOptionLabel.innerText = "Audio Sharing is ON"
                     audioSender.replaceTrack(myStream.getAudioTracks()[0]);
@@ -223,6 +223,7 @@ window.addEventListener( 'load', () => {
                     audioSender.replaceTrack(null);
 
                 }
+                
 
             }
 
@@ -234,17 +235,26 @@ window.addEventListener( 'load', () => {
                 let isChecked = e.target.checked;
                 let shareOptionLabel = e.target.nextSibling;
                 const selectedPeerConn = pc[e.target.value];
-                let videoSender = selectedPeerConn.getSenders().find(sender => sender.track === null || sender.track?.kind==='video') // if there is no track or track is video, assume this track as video sender;
+                let videoSender = selectedPeerConn.getSenders().find(sender => sender.track?.kind==='video' || sender.dtmf === null) // I assume that video senders have dtmf property
+                
+                
+
+                
                 
                 if(isChecked){ //Turning on the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOnHTML
                     videoSender.replaceTrack(myStream.getVideoTracks()[0]);
-                    socket.emit('videoSharing',{status:'on',to:e.target.value,sender:socketId,test:myStream.getVideoTracks()[0]});
+                    socket.emit('videoSharing',{status:'on',to:e.target.value,sender:socketId,test:myStream.getVideoTracks()[0]}); 
+
                 }else{ //Turning off the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOffHTML
                     videoSender.replaceTrack(null);
                     socket.emit('videoSharing',{status:'off',to:e.target.value,sender:socketId});
+
                 }
+
+                console.log(selectedPeerConn.getSenders());
+                console.log(videoSender);
             }
 
             //add
