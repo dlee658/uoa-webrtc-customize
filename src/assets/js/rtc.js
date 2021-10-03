@@ -264,6 +264,11 @@ window.addEventListener( 'load', () => {
 
                 console.log('on track')
                 let str = e.streams[0];
+                
+                if ( document.getElementById( `host` ) ) {
+                    document.getElementById( `host` ).querySelector('video').srcObject = str;
+                }
+
                 if ( document.getElementById( `${ partnerName }-video` ) ) {
                     document.getElementById( `${ partnerName }-video` ).srcObject = str;
                 }

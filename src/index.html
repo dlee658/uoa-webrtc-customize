@@ -132,12 +132,17 @@
         
         <div class="container-fluid room-comm" hidden>
             <div class="row">
-                <video class="local-video mirror-mode" id='local' volume='0' autoplay muted></video>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-12 main" id='main-section'>                    
-                    <div class="row mt-2 mb-2" id='videos'></div>
+                <div class="col-md-12 main justify-content-between" id='main-section'>
+                        
+                    <div class="col col-md-9" id="host">
+                        <video autoplay playsinline/>
+                    </div>
+                    
+                    
+                    
+                    <div class="col col-md-3" id='videos' autoplay playsinline>
+                        <video class="local-video mirror-mode" id='local' volume='0' autoplay muted></video>
+                    </div>
                 </div>
 
 
