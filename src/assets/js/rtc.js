@@ -353,7 +353,6 @@ window.addEventListener( 'load', () => {
                     //video elem
                     let newVid = document.createElement( 'video' );
                     newVid.id = `${ partnerName }-video`;
-                    newVid.srcObject = str;
                     newVid.autoplay = true;
                     newVid.className = 'remote-video';
 
@@ -483,9 +482,19 @@ window.addEventListener( 'load', () => {
                 //share the new stream with all partners
                 broadcastNewTracks( stream, 'video', false );
 
+                const mainVideo = document.getElementById('host').querySelector('video');
+                mainVideo.srcObject = screen;  //set the main video to the screen sharing
+
                 //When the stop sharing button shown by the browser is clicked
                 screen.getVideoTracks()[0].addEventListener( 'ended', () => {
                     stopSharingScreen();
+
+                    if(socketId === hostId){ // if the user is the host get back to his cam video
+                        mainVideo.srcObject = myStream;
+                    }else{ // otherwise, bring the host stream back to the main video
+                        mainVideo.srcObject = pcMediaStreams[hostId];
+                    }
+                    
                 } );
             } ).catch( ( e ) => {
                 console.error( e );
