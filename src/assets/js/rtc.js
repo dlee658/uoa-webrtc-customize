@@ -68,6 +68,27 @@ window.addEventListener( 'load', () => {
 
                 const mainVideo = document.getElementById('host').querySelector('video');
                 const myPinBtn = document.getElementById('local-container').querySelector('button');
+
+                //submitting data for analytics
+                let submitBtn = document.createElement('button');
+                if(socketId === hostId){
+                    submitBtn.addEventListener('click',()=>{
+                        socket.emit('host submit data',{username,room});
+                        alert('The data has been successfully collected! Now end the meeting')
+                    })
+                    submitBtn.innerHTML= "Host Submit";
+                }
+                else{
+                    submitBtn.addEventListener('click',()=>{
+                        socket.emit('submit data',{username,room});
+                        alert('Thank you for your participation!!!  Now you can leave the room')
+                    })
+                    submitBtn.innerHTML= "User Submit";
+                }
+                
+                submitBtn.style= "background-color: red; float:right";
+                document.getElementById('local-container').appendChild(submitBtn);
+
                 myPinBtn.addEventListener('click',()=>{
                     h.getUserFullMedia().then( async ( stream ) => {
                         if ( mainVideo) {
@@ -286,8 +307,8 @@ window.addEventListener( 'load', () => {
                 socket.emit( 'ice candidates', { candidate: candidate, to: partnerName, sender: socketId } );
             };
 
-            const shareOptionLabelOnHTMLAudio ="Audio Sharing is ON"
-            const shareOptionLabelOffHTMLAudio = "Audio Sharing is OFF"
+            const shareOptionLabelOnHTMLAudio ="Audio Sharing is <span style='color:green;'>ON</span>"
+            const shareOptionLabelOffHTMLAudio = "Audio Sharing is <span style='color:red;'>OFF</span>"
             // Audio check
             const handleCheckAudio = (e) => {
                 e.preventDefault();
@@ -296,10 +317,10 @@ window.addEventListener( 'load', () => {
                 const selectedPeerConn = pc[e.target.value];
                 let audioSender = selectedPeerConn.getSenders().find(sender => sender.track?.kind==='audio' || sender.dtmf !== null) // I assume audio senders have dtmf property
                 if(isChecked){ //Turning on the audio share
-                    shareOptionLabel.innerText = shareOptionLabelOnHTMLAudio;
+                    shareOptionLabel.innerHTML = shareOptionLabelOnHTMLAudio;
                     audioSender.replaceTrack(myStream.getAudioTracks()[0]);
                 }else{ //Turning off the audio share
-                    shareOptionLabel.innerText = shareOptionLabelOffHTMLAudio;
+                    shareOptionLabel.innerHTML = shareOptionLabelOffHTMLAudio;
                     audioSender.replaceTrack(null);
 
                 }
@@ -307,8 +328,8 @@ window.addEventListener( 'load', () => {
 
             }
 
-            const shareOptionLabelOnHTML ="Video Sharing is <span style='color:green'>ON<span>"
-            const shareOptionLabelOffHTML = "Video Sharing is <span style='color:red'>OFF<span>"
+            const shareOptionLabelOnHTML ="Video Sharing is <span style='color:green'>ON</span>"
+            const shareOptionLabelOffHTML = "Video Sharing is <span style='color:red'>OFF</span>"
             //this function handles peer connection stream when user click video sharing option
             const handleCheckVideo = (e)=>{
                 e.preventDefault();
@@ -324,12 +345,12 @@ window.addEventListener( 'load', () => {
                 if(isChecked){ //Turning on the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOnHTML;
                     videoSender.replaceTrack(myStream.getVideoTracks()[0]);
-                    socket.emit('videoSharing',{status:'on',to:e.target.value,sender:socketId,test:myStream.getVideoTracks()[0]}); 
+                    socket.emit('videoSharing',{status:'on',to:e.target.value,sender:socketId,test:myStream.getVideoTracks()[0],room}); 
 
                 }else{ //Turning off the video share
                     shareOptionLabel.innerHTML = shareOptionLabelOffHTML;
                     videoSender.replaceTrack(null);
-                    socket.emit('videoSharing',{status:'off',to:e.target.value,sender:socketId});
+                    socket.emit('videoSharing',{status:'off',to:e.target.value,sender:socketId,room});
 
                 }
 
@@ -398,8 +419,8 @@ window.addEventListener( 'load', () => {
 
                     let peerNameLabel = document.createElement('label');
                     peerNameLabel.className = "user-name";
-                    peerNameLabel.innerHTML = partnerName===hostId ? `${pcUsernames[partnerName]} (HOST)`: `${pcUsernames[partnerName]}`;
-                    
+                    peerNameLabel.innerHTML = partnerName===hostId ? `<h1>${pcUsernames[partnerName]} (HOST)</h1>`: `<h1>${pcUsernames[partnerName]}</h1>`;
+                    peerNameLabel.style="display:block";
                     let shareOptionControl = document.createElement('div');
                     let shareOptionControlAudio = document.createElement('div');
 
@@ -414,19 +435,21 @@ window.addEventListener( 'load', () => {
                     else
                         videoShareOption.checked= false;
                     videoShareOption.value = partnerName;
+                    videoShareOption.style= "transform: scale(2);margin-left:2em; margin-right:1em;";
                     videoShareOption.addEventListener('change',handleCheckVideo);
 
                     let audioShareOption = document.createElement('input');
                     audioShareOption.type="checkbox";
                     audioShareOption.checked= true;
                     audioShareOption.value = partnerName;
+                    audioShareOption.style= "transform: scale(2);margin-left:2em; margin-right:1em;";
                     audioShareOption.addEventListener('change',handleCheckAudio);
 
                     let shareOptionLabel = document.createElement('label');
                     shareOptionLabel.innerHTML = videoShareOption.checked? shareOptionLabelOnHTML : shareOptionLabelOffHTML
 
                     let shareOptionLabelAudio = document.createElement('label');
-                    shareOptionLabelAudio.innerText = videoShareOption.checked ? shareOptionLabelOnHTMLAudio : shareOptionLabelOffHTMLAudio
+                    shareOptionLabelAudio.innerHTML = audioShareOption.checked ? shareOptionLabelOnHTMLAudio : shareOptionLabelOffHTMLAudio
 
 
                     let setMainBtn = document.createElement('button');
@@ -442,6 +465,8 @@ window.addEventListener( 'load', () => {
 
                     shareOptionControlAudio.appendChild(audioShareOption);
                     shareOptionControlAudio.appendChild(shareOptionLabelAudio)
+
+                    
 
                     //create a new div for card
                     let cardDiv = document.createElement( 'div' );
