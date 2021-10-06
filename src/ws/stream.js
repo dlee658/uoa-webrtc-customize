@@ -1,14 +1,16 @@
-let hostId = null;
+let roomInfos = [];
 
 const stream = ( socket ) => {
     socket.on( 'subscribe', ( data ) => {
-        console.log('host id = '+hostId)
-        if(!hostId){ //The first user's socket id is stored as the first host socket id
-            hostId = data.socketId; 
-            socket.emit('set host',{hostId:data.socketId})
-        }else{
-            socket.emit('set host',{hostId});
+        if(!roomInfos[data.room]){ //The first user's socket id is stored as the first host socket id
+            roomInfos[data.room]= {hostId:data.socketId,hostName:data.newUsername}   
         }
+        socket.emit('set host',roomInfos[data.room])
+        console.log('host id = '+roomInfos[data.room].hostId)
+        console.log('host name = '+roomInfos[data.room].hostName)
+
+        
+
         //subscribe/join a room
         socket.join( data.room );
         socket.join( data.socketId );
@@ -18,24 +20,26 @@ const stream = ( socket ) => {
             socket.to( data.room ).emit( 'new user', { socketId: data.socketId, newUsername:data.newUsername } );  //socketId = New user's socketId
         }
 
+        
     } );
 
     socket.on('disconneting' , ()=>{
-        hostId = null;
-        if(socket.id === hostId){
-            socket.rooms.foreach(room=>{
+        for(let room in socket.rooms){
+            if(socket.id === roomInfos[room].hostId){
                 socket.to(room).emit('host out');
-            })
+                roomInfos[room].hostId =null;
+            }
         }
     })
 
     socket.on('disconnect',()=>{
-        hostId = null;
-        if(socket.id === hostId){
-            socket.rooms.foreach(room=>{
+        for(let room in socket.rooms){
+            if(socket.id === roomInfos[room].hostId){
                 socket.to(room).emit('host out');
-            })
+                roomInfos[room].hostId =null;
+            }
         }
+
     })
 
 

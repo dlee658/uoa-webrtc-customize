@@ -58,8 +58,11 @@ window.addEventListener( 'load', () => {
 
             //setting host socket id
             socket.on('set host',(data)=>{
+                
+                console.log('setting host '+ data.hostName)
+
                 hostId = data.hostId;
-                console.log('setting host '+ data.hostId)
+                pcUsernames['host'] = data.hostName;
 
                 mainUserEle = document.getElementById('main-user-id');
 
@@ -75,7 +78,7 @@ window.addEventListener( 'load', () => {
                     } );
                 })
 
-                if(data.hostId === socketId){ //if I am the host show my screen
+                if(data.hostId === socketId){ //if I am the host show my screen on the main video
 
                     mainUserEle.value = socketId
                     h.getUserFullMedia().then( async ( stream ) => {
@@ -85,6 +88,8 @@ window.addEventListener( 'load', () => {
                     } ).catch( ( e ) => {
                         console.error( e );
                     } );
+                    
+                    
 
                 }else{ 
                     console.log(pcMediaStreams[hostId])
@@ -335,6 +340,9 @@ window.addEventListener( 'load', () => {
 
                 console.log('on track')
                 let str = e.streams[0];
+                pcMediaStreams[partnerName] = str;
+                const audioStreamOnly = new MediaStream(str.getAudioTracks());
+                const videoPlaceHolderImg='image/videoImage.png';
                 
 
                 //setting the main video
@@ -342,11 +350,20 @@ window.addEventListener( 'load', () => {
                     if(partnerName === hostId){ //if connected pc is the host show it on the main video
                         document.getElementById( `host` ).querySelector('video').srcObject = e.streams[0];
                         mainUserEle.value = partnerName;
+                        console.log('yes host')
+                    }else{
+                        console.log('no host')
                     }
                 }
 
                 if ( document.getElementById( `${ partnerName }-video` ) ) {
-                    document.getElementById( `${ partnerName }-video` ).srcObject = str;
+                    if(partnerName===hostId){ //If the partner is the host, show there screen on a card
+                        document.getElementById( `${ partnerName }-video` ).srcObject = str
+                    }else{ //
+                        document.getElementById( `${ partnerName }-video` ).srcObject = audioStreamOnly;
+                        document.getElementById( `${ partnerName }-video` ).poster = videoPlaceHolderImg;
+                    }
+                    
                 }
 
                 else {
@@ -355,6 +372,12 @@ window.addEventListener( 'load', () => {
                     newVid.id = `${ partnerName }-video`;
                     newVid.autoplay = true;
                     newVid.className = 'remote-video';
+                    if(partnerName===hostId){ //If the partner is the host, show there screen on a card
+                        newVid.srcObject = str
+                    }else{
+                        newVid.srcObject = audioStreamOnly;
+                        newVid.poster = videoPlaceHolderImg;
+                    }
 
                     let newVidDiv = document.createElement('div');
 
@@ -375,7 +398,8 @@ window.addEventListener( 'load', () => {
 
                     let peerNameLabel = document.createElement('label');
                     peerNameLabel.className = "user-name";
-                    peerNameLabel.innerText = `${pcUsernames[partnerName]}`;
+                    peerNameLabel.innerHTML = partnerName===hostId ? `${pcUsernames[partnerName]} (HOST)`: `${pcUsernames[partnerName]}`;
+                    
                     let shareOptionControl = document.createElement('div');
                     let shareOptionControlAudio = document.createElement('div');
 
@@ -384,7 +408,11 @@ window.addEventListener( 'load', () => {
 
                     let videoShareOption = document.createElement('input');
                     videoShareOption.type="checkbox";
-                    videoShareOption.checked= true;
+
+                    if(socketId === hostId) //if the user is host, leave the video sharing is checked intially
+                        videoShareOption.checked= true;
+                    else
+                        videoShareOption.checked= false;
                     videoShareOption.value = partnerName;
                     videoShareOption.addEventListener('change',handleCheckVideo);
 
