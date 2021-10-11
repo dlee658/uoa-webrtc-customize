@@ -46,4 +46,5 @@ The summit button is for the end to create of a conference to create a log file 
 
 
 # Demo
+The demo is deployed using npm local tunnel which is temporary for user study purposes.
 Please request the link for the demo at jjou009@aucklanduni.ac.nz
